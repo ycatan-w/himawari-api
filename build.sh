@@ -12,9 +12,22 @@ BLUE="\033[0;34m"
 NC="\033[0m"
 
 # === Build Variables ===
-branch_or_tag=$(git describe --tags --exact-match 2>/dev/null || git branch --show-current)
+TIMESTAMP=$(git log -1 --format="%ct")
+if date --version >/dev/null 2>&1; then
+    DATE=$(date -u -d "@$TIMESTAMP" +"%Y-%m-%dT%H:%M:%S%Z")
+else
+    DATE=$(date -u -r "$TIMESTAMP" +"%Y-%m-%dT%H:%M:%SZ")
+fi
+HASH=$(git log -1 --format="%h")
+REFS=$(git log -1 --format="%D")
+# BRANCH_OR_TAG=$(echo "$REFS" | sed -E 's/.*-> //; s/tag: //; s/,.*//')
+BRANCH_OR_TAG=$(echo "$REFS" | grep -o 'tag: [^,]*' | sed 's/tag: //')
+if [ -z "$BRANCH_OR_TAG" ]; then
+    BRANCH_OR_TAG=$(echo "$REFS" | sed -E 's/.*-> //; s/,.*//')
+fi
+
 PROJECT="himawari-server"
-VERSION="$branch_or_tag"
+VERSION="$BRANCH_OR_TAG"
 BIN_DIR="bin"
 BUILD_DIR="dist"
 TAR="tar"
@@ -76,7 +89,7 @@ compile_go() {
   if [[ "$os" == "windows" ]]; then
     name="${name}.exe"
   fi
-  CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -o $BIN_DIR/${name} ./cmd/server
+  CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "-X main.version=$VERSION -X main.commit=$HASH -X main.date=$DATE" -o $BIN_DIR/${name} ./cmd/server
   success "Compiled: $name"
 }
 
