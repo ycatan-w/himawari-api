@@ -1,0 +1,13 @@
+[Unit]
+Description=Himawari Server
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/himawari-server --port 9740
+User=nobody
+Group=nogroup
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,53 @@
+# Binaries
+/bin/
+/dist/
+/db/
+/*.exe
+/*.exe~
+/*.dll
+/*.so
+/*.dylib
+/*.test
+*.out
+
+# Go build cache & modules
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.pid
+*.prof
+
+# Go workspace
+/go.work
+/go.work.sum
+
+# IDE / Editor configs
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Coverage & testing
+coverage.out
+*.coverprofile
+
+# Env / local config
+.env
+.env.local
+*.db
+/devdata/
+
+# Packaging outputs
+*.deb
+*.rpm
+*.pkg
+*.msi
+*.zip
+*.tar.gz
+
+# Vendor (if you don't use go mod vendor, else remove)
+vendor/

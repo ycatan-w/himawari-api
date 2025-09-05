@@ -1,0 +1,92 @@
+#!/bin/bash
+set -euo pipefail
+
+# === Colors ===
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+YELLOW_UNDERLINE="\033[4;33m"
+BRIGHT_YELLOW="\033[2;93m"
+CYAN="\033[0;36m"
+BRIGHT_CYAN="\033[0;96m"
+BLUE="\033[0;34m"
+NC="\033[0m"
+
+# === Output Helper ===
+header() {
+  echo
+  echo -e "${BRIGHT_CYAN}==========[ ${BRIGHT_YELLOW}$(date +%H:%M:%S)${BRIGHT_CYAN} • $1 ]==========${NC}"
+}
+subheader() {
+  echo
+  echo -e "${CYAN}--- $1${NC}"
+}
+success() {
+    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${GREEN}✔ ${NC} $1"
+}
+
+fail() {
+    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${RED}✖ ${NC} $1"
+}
+
+warn() {
+    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${YELLOW}‼ ${NC} $1"
+}
+
+info() {
+    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${BLUE}ⓘ ${NC} $1"
+}
+
+if [ "$EUID" -ne 0 ]; then
+  warn "This script requires to run with sudo: \n> ${CYAN}sudo $0${NC}"
+  exit 1
+fi
+
+# === Installation process ===
+PROJECT="himawari-server"
+SERVICE_NAME="com.himawari.server"
+PLIST_NAME="$SERVICE_NAME.plist"
+PLIST_DST="/Library/LaunchDaemons/$PLIST_NAME"
+BIN_PATH="/usr/local/bin/$PROJECT"
+
+header "Install $PROJECT into bin directory"
+cp "$PROJECT" "$BIN_PATH" || true
+chmod +x "$BIN_PATH"
+success "${GREEN}$PROJECT${NC} installed"
+
+header "Install $PROJECT-uninstall into bin directory"
+cp "uninstall.sh" "$BIN_PATH-uninstall" || true
+chmod +x "$BIN_PATH-uninstall"
+success "${GREEN}$PROJECT-uninstall${NC} installed"
+
+header "Install $PLIST_NAME LaunchDaemon"
+cp "$PLIST_NAME" "$PLIST_DST" || true
+chown root:wheel "$PLIST_DST"
+chmod 644 "$PLIST_DST"
+success "${GREEN}$PLIST_NAME${NC} installed"
+
+header "Create $PROJECT config and log directories"
+mkdir -p /var/lib/himawari
+mkdir -p /var/log
+touch /var/log/himawari-server.log /var/log/himawari-server-error.log
+chown root:wheel /var/log/himawari-server*.log || true
+success "Directories created"
+
+header "Initialize database"
+"$BIN_PATH" --init-db
+success "database created"
+
+header "Check $SERVICE_NAME"
+if launchctl list | grep -q "$SERVICE_NAME"; then
+    subheader "Unload $SERVICE_NAME"
+    launchctl unload "$PLIST_DST" || true
+    success "${GREEN}$SERVICE_NAME${NC} unloaded"
+fi
+success "${GREEN}$SERVICE_NAME${NC} is ready to start"
+
+header "Start $SERVICE_NAME"
+launchctl load -w "$PLIST_DST"
+success "${GREEN}$SERVICE_NAME${NC} started"
+
+echo
+info "${GREEN}$PROJECT${NC} is accessible from ${YELLOW_UNDERLINE}http://localhost:9740${NC}"
