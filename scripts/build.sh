@@ -14,22 +14,22 @@ NC="\033[0m"
 # === Build Variables ===
 TIMESTAMP=$(git log -1 --format="%ct")
 if date --version >/dev/null 2>&1; then
-    DATE=$(date -u -d "@$TIMESTAMP" +"%Y-%m-%dT%H:%M:%S%Z")
+  DATE=$(date -u -d "@$TIMESTAMP" +"%Y-%m-%dT%H:%M:%S%Z")
 else
-    DATE=$(date -u -r "$TIMESTAMP" +"%Y-%m-%dT%H:%M:%SZ")
+  DATE=$(date -u -r "$TIMESTAMP" +"%Y-%m-%dT%H:%M:%SZ")
 fi
 HASH=$(git log -1 --format="%h")
 REFS=$(git log -1 --format="%D")
-# BRANCH_OR_TAG=$(echo "$REFS" | sed -E 's/.*-> //; s/tag: //; s/,.*//')
 BRANCH_OR_TAG=$(echo "$REFS" | grep -o 'tag: [^,]*' | sed 's/tag: //')
 if [ -z "$BRANCH_OR_TAG" ]; then
-    BRANCH_OR_TAG=$(echo "$REFS" | sed -E 's/.*-> //; s/,.*//')
+  BRANCH_OR_TAG=$(echo "$REFS" | sed -E 's/.*-> //; s/,.*//')
 fi
 
 PROJECT="himawari-server"
+PROJECT_DIR="$(dirname "$(readlink -f "$0")")/../"
 VERSION="$BRANCH_OR_TAG"
-BIN_DIR="bin"
-BUILD_DIR="dist"
+BIN_DIR="${PROJECT_DIR}bin"
+BUILD_DIR="${PROJECT_DIR}dist"
 TAR="tar"
 ZIP="zip"
 PKGBUILD="pkgbuild"
@@ -37,9 +37,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   TAR="gtar"
 fi
 set +e
-TAR_BIN="$(command -v $TAR 2> /dev/null)"
-ZIP_BIN="$(command -v $ZIP 2> /dev/null)"
-PKGBUILD_BIN="$(command -v $PKGBUILD 2> /dev/null)"
+TAR_BIN="$(command -v $TAR 2>/dev/null)"
+ZIP_BIN="$(command -v $ZIP 2>/dev/null)"
+PKGBUILD_BIN="$(command -v $PKGBUILD 2>/dev/null)"
 set -e
 
 # === Output Helper ===
@@ -62,19 +62,19 @@ subheader() {
   echo -e "${CYAN}--- $1${NC}"
 }
 success() {
-    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${GREEN}✔ ${NC} $1"
+  echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${GREEN}✔ ${NC} $1"
 }
 
 fail() {
-    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${RED}✖ ${NC} $1"
+  echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${RED}✖ ${NC} $1"
 }
 
 warn() {
-    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${YELLOW}‼ ${NC} $1"
+  echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${YELLOW}‼ ${NC} $1"
 }
 
 info() {
-    echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${BLUE}ⓘ ${NC} $1"
+  echo -e "[${BRIGHT_YELLOW}$(date +%H:%M:%S)${NC}] ${BLUE}ⓘ ${NC} $1"
 }
 
 # === Build Helper ===
@@ -99,7 +99,7 @@ package_linux() {
   pkg_name=$(printf "%s.tar.gz" $name)
 
   cp $BIN_DIR/${name} $BUILD_DIR/linux/${PROJECT}
-  cp build/linux/install.sh build/linux/uninstall.sh build/linux/himawari.service $BUILD_DIR/linux/
+  cp ${PROJECT_DIR}build/linux/install.sh ${PROJECT_DIR}build/linux/uninstall.sh ${PROJECT_DIR}build/linux/himawari.service $BUILD_DIR/linux/
   chmod +x $BUILD_DIR/linux/install.sh $BUILD_DIR/linux/uninstall.sh
   cd $BUILD_DIR/linux
   $TAR_BIN czf ${pkg_name} ${PROJECT} install.sh uninstall.sh himawari.service
@@ -117,16 +117,16 @@ package_macos_pkgbuild() {
   mkdir -p $BUILD_DIR/macos-pkg/pkgroot/Library/LaunchDaemons
   mkdir -p $BUILD_DIR/macos-pkg/Scripts
   cp $BIN_DIR/${name} $BUILD_DIR/macos-pkg/pkgroot/usr/local/bin/${PROJECT}
-  cp build/macos-pkg/uninstall.sh $BUILD_DIR/macos-pkg/pkgroot/usr/local/bin/${PROJECT}-uninstall
+  cp ${PROJECT_DIR}build/macos-pkg/uninstall.sh $BUILD_DIR/macos-pkg/pkgroot/usr/local/bin/${PROJECT}-uninstall
   chmod +x $BUILD_DIR/macos-pkg/pkgroot/usr/local/bin/${PROJECT}-uninstall
-  cp build/macos-pkg/com.himawari.server.plist $BUILD_DIR/macos-pkg/pkgroot/Library/LaunchDaemons/
-  cp build/macos-pkg/preinstall build/macos-pkg/postinstall $BUILD_DIR/macos-pkg/Scripts/
+  cp ${PROJECT_DIR}build/macos-pkg/com.himawari.server.plist $BUILD_DIR/macos-pkg/pkgroot/Library/LaunchDaemons/
+  cp ${PROJECT_DIR}build/macos-pkg/preinstall ${PROJECT_DIR}build/macos-pkg/postinstall $BUILD_DIR/macos-pkg/Scripts/
   chmod +x $BUILD_DIR/macos-pkg/Scripts/*
   $PKGBUILD_BIN --root $BUILD_DIR/macos-pkg/pkgroot \
-          --scripts $BUILD_DIR/macos-pkg/Scripts \
-          --identifier com.himawari.server \
-          --version $VERSION \
-          $BUILD_DIR/macos-pkg/$pkg_name &> /dev/null
+    --scripts $BUILD_DIR/macos-pkg/Scripts \
+    --identifier com.himawari.server \
+    --version $VERSION \
+    $BUILD_DIR/macos-pkg/$pkg_name &>/dev/null
   rm -r $BUILD_DIR/macos-pkg/Scripts $BUILD_DIR/macos-pkg/pkgroot
   success "Packaged: ${pkg_name}"
 }
@@ -137,7 +137,7 @@ package_macos_tar_gz() {
   pkg_name=$(printf "%s-%s-macos_%s.tar.gz" $PROJECT $VERSION $arch)
 
   cp $BIN_DIR/${name} $BUILD_DIR/macos/${PROJECT}
-  cp build/macos/install.sh build/macos/uninstall.sh build/macos/com.himawari.server.plist $BUILD_DIR/macos/
+  cp ${PROJECT_DIR}build/macos/install.sh ${PROJECT_DIR}build/macos/uninstall.sh ${PROJECT_DIR}build/macos/com.himawari.server.plist $BUILD_DIR/macos/
   chmod +x $BUILD_DIR/macos/install.sh $BUILD_DIR/macos/uninstall.sh
   cd $BUILD_DIR/macos
   $TAR_BIN czf ${pkg_name} ${PROJECT} install.sh uninstall.sh com.himawari.server.plist
@@ -151,9 +151,9 @@ package_windows() {
   name=$(generate_build_name "windows" "$arch")
   pkg_name=$(printf "%s.zip" $name)
   cp $BIN_DIR/${name}.exe $BUILD_DIR/windows/${PROJECT}.exe
-  cp build/windows/install.bat build/windows/uninstall.bat build/windows/install.ps1 build/windows/uninstall.ps1 $BUILD_DIR/windows/
+  cp ${PROJECT_DIR}build/windows/install.bat ${PROJECT_DIR}build/windows/uninstall.bat ${PROJECT_DIR}build/windows/install.ps1 ${PROJECT_DIR}build/windows/uninstall.ps1 $BUILD_DIR/windows/
   cd $BUILD_DIR/windows
-  $ZIP_BIN -r ${pkg_name} ${PROJECT}.exe install.bat uninstall.bat install.ps1 uninstall.ps1 &> /dev/null
+  $ZIP_BIN -r ${pkg_name} ${PROJECT}.exe install.bat uninstall.bat install.ps1 uninstall.ps1 &>/dev/null
   rm ${PROJECT}.exe install.bat uninstall.bat install.ps1 uninstall.ps1
   cd ../../
   success "Packaged: ${pkg_name}"
@@ -182,24 +182,24 @@ success "Directory created"
 # === Go Compilation ===
 header "Compile Go binaries"
 
-  # === Linux ===
+# === Linux ===
 subheader "Linux compilation"
 compile_go "linux" "amd64"
 compile_go "linux" "arm64"
 compile_go "linux" "386"
 
-  # === MacOs ===
+# === MacOs ===
 subheader "Macos compilation"
 compile_go "darwin" "amd64"
 compile_go "darwin" "arm64"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   lipo -create -output $BIN_DIR/$(generate_build_name "darwin" "all") \
-      $BIN_DIR/$(generate_build_name "darwin" "amd64") \
-      $BIN_DIR/$(generate_build_name "darwin" "arm64")
+    $BIN_DIR/$(generate_build_name "darwin" "amd64") \
+    $BIN_DIR/$(generate_build_name "darwin" "arm64")
   success "Compiled: $(generate_build_name "darwin" "all")"
 fi
 
-  # === Windows ===
+# === Windows ===
 subheader "Windows compilation"
 compile_go "windows" "amd64"
 compile_go "windows" "386"
@@ -207,13 +207,13 @@ compile_go "windows" "386"
 # === Platform packaging ===
 header "Build platform packages"
 
-  # === Linux ===
+# === Linux ===
 subheader "Linux packaging"
 package_linux "amd64"
 package_linux "arm64"
 package_linux "386"
 
-  # === MacOs ===
+# === MacOs ===
 if [[ "$OSTYPE" == "darwin"* ]]; then
   subheader "Macos packaging (.pkg)"
   package_macos_pkgbuild "amd64"
@@ -229,7 +229,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   package_macos_tar_gz "all"
 fi
 
-  # === Windows ===
+# === Windows ===
 subheader "Windows packaging"
 package_windows "amd64"
 package_windows "386"
