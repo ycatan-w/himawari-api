@@ -1,0 +1,937 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Himawari API",
+    "description": "Himawari API - Plan your days, keep your memories — all in one place.",
+    "version": "develop",
+    "contact": {
+      "name": "Himawari API Support",
+      "url": "https://github.com/ycatan-w/himawari-api"
+    }
+  },
+
+  "servers": [
+    {
+      "url": "http://localhost:9740/api"
+    }
+  ],
+  "security": [{ "BearerAuth": [] }],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Auths Api endpoints"
+    },
+    {
+      "name": "events",
+      "description": "Events Api endpoints"
+    },
+    {
+      "name": "logs",
+      "description": "Logs Api endpoints"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "summary": "Login user",
+        "security": [],
+        "tags": ["auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserFormData" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AuthSuccessResponse" },
+          "400": {
+            "description": "Failure to login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidLogin"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "summary": "Register user",
+        "security": [],
+        "tags": ["auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserFormData" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/AuthSuccessResponse" },
+          "400": {
+            "description": "Failure to register",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRegistration"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "Logout user",
+        "security": [],
+        "tags": ["auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "example": "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Logged out successfully" },
+          "400": {
+            "description": "Failure to register",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_REQUEST",
+                              "details": "Invalid JSON"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "summary": "Get events on a specific date",
+        "tags": ["events"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "required": true,
+            "description": "Date of events in YYYY-MM-DD format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/EventList" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to get events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "invalid_user_id" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "date",
+                              "code": "REQUIRED_DATE",
+                              "details": "A Date is required"
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      },
+      "post": {
+        "summary": "Create a new event",
+        "tags": ["events"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EventFormData" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created Event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "event_created" },
+                        "data": { "$ref": "#/components/schemas/Event" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to create event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "validation_failed" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_REQUEST",
+                              "details": "Invalid JSON"
+                            },
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "title",
+                              "code": "INVALID_TITLE_LENGTH",
+                              "details": "Title cannot contains more than 100 chars."
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            },
+                            {
+                              "field": "start",
+                              "code": "INVALID_START",
+                              "details": "Start must be between 0 and 1439 (00:00 and 23:59)"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      }
+    },
+    "/events/{id}": {
+      "put": {
+        "summary": "Update an event by id",
+        "tags": ["events"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "Event ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EventFormData" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "event_updated" },
+                        "data": { "$ref": "#/components/schemas/Event" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to update event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "validation_failed" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_REQUEST",
+                              "details": "Invalid JSON"
+                            },
+                            {
+                              "field": "event_id",
+                              "code": "REQUIRED_EVENT_ID",
+                              "details": "EventId cannot be empty."
+                            },
+                            {
+                              "field": "event_id",
+                              "code": "INVALID_EVENT_ID",
+                              "details": "The event id provided wasn't found.."
+                            },
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "title",
+                              "code": "REQUIRED_TITLE",
+                              "details": "Title cannot be empty."
+                            },
+                            {
+                              "field": "title",
+                              "code": "INVALID_TITLE_LENGTH",
+                              "details": "Title cannot contains more than 100 chars."
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            },
+                            {
+                              "field": "start",
+                              "code": "INVALID_START",
+                              "details": "Start must be between 0 and 1439 (00:00 and 23:59)"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      },
+      "delete": {
+        "summary": "Delete an event by id",
+        "tags": ["events"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "Event ID"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Event deleted successfully" },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      }
+    },
+    "/logs": {
+      "get": {
+        "summary": "Get logs on a specific date",
+        "tags": ["logs"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "required": true,
+            "description": "Date of events in YYYY-MM-DD format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logs list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/LogList" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to get logs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "invalid_user_id" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "date",
+                              "code": "REQUIRED_DATE",
+                              "details": "A Date is required"
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      },
+      "post": {
+        "summary": "Create a new log",
+        "tags": ["logs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LogFormData" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "log_created" },
+                        "data": { "$ref": "#/components/schemas/Log" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to create log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "validation_failed" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_REQUEST",
+                              "details": "Invalid JSON"
+                            },
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "text",
+                              "code": "REQUIRED_TEXT",
+                              "details": "Text cannot be empty."
+                            },
+                            {
+                              "field": "text",
+                              "code": "INVALID_TEXT_LENGTH",
+                              "details": "Text cannot contains more than 5000 chars."
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      }
+    },
+    "/logs/{id}": {
+      "put": {
+        "summary": "Update a log by id",
+        "tags": ["logs"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "Log ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LogFormData" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated Log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "log_updated" },
+                        "data": { "$ref": "#/components/schemas/Log" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Failure to update log",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "message": { "example": "validation_failed" },
+                        "errors": {
+                          "example": [
+                            {
+                              "code": "INVALID_REQUEST",
+                              "details": "Invalid JSON"
+                            },
+                            {
+                              "code": "INVALID_USER_ID",
+                              "details": "User id not found"
+                            },
+                            {
+                              "field": "text",
+                              "code": "REQUIRED_TEXT",
+                              "details": "Text cannot be empty."
+                            },
+                            {
+                              "field": "text",
+                              "code": "INVALID_TEXT_LENGTH",
+                              "details": "Text cannot contains more than 5000 chars."
+                            },
+                            {
+                              "field": "date",
+                              "code": "INVALID_DATE_FORMAT",
+                              "details": "Date must be in YYYY-MM-DD format."
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a log by id",
+        "tags": ["logs"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "Log ID"
+          }
+        ],
+        "responses": {
+          "204": { "description": "Log deleted successfully" },
+          "401": { "$ref": "#/components/responses/UnauthorizedResponse" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "UserFormData": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string" }
+        },
+        "required": ["username", "password"]
+      },
+      "UserToken": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "token": { "type": "string" }
+        }
+      },
+      "EventData": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "date": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "start": { "type": "integer", "minimum": 0, "maximum": 1439 },
+          "end": { "type": "integer", "minimum": 0, "maximum": 1439 }
+        }
+      },
+      "EventFormData": {
+        "allOf": [
+          { "$ref": "#/components/schemas/EventData" },
+          { "required": ["title", "date", "start", "end"] }
+        ]
+      },
+      "Event": {
+        "allOf": [
+          { "$ref": "#/components/schemas/EventData" },
+          {
+            "type": "object",
+            "properties": { "id": { "type": "integer" } }
+          }
+        ]
+      },
+      "EventList": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Event" }
+      },
+      "LogData": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" },
+          "date": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          }
+        }
+      },
+      "LogFormData": {
+        "allOf": [
+          { "$ref": "#/components/schemas/LogData" },
+          { "required": ["text", "date"] }
+        ]
+      },
+      "Log": {
+        "allOf": [
+          { "$ref": "#/components/schemas/LogData" },
+          { "type": "object", "properties": { "id": { "type": "integer" } } }
+        ]
+      },
+      "LogList": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Log" }
+      },
+      "InvalidLogin": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ErrorAPIResponse" },
+          {
+            "type": "object",
+            "properties": {
+              "message": { "example": "validation_failed" },
+              "errors": {
+                "example": [
+                  {
+                    "code": "INVALID_REQUEST",
+                    "details": "Invalid JSON"
+                  },
+                  {
+                    "field": "username",
+                    "code": "REQUIRED_USERNAME",
+                    "details": "Username is required."
+                  },
+                  {
+                    "field": "password",
+                    "code": "REQUIRED_PASSWORD",
+                    "details": "Password is required."
+                  },
+                  {
+                    "field": "",
+                    "code": "INVALID_LOGIN",
+                    "details": "Username or Password is invalid"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "InvalidRegistration": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ErrorAPIResponse" },
+          {
+            "type": "object",
+            "properties": {
+              "message": { "example": "validation_failed" },
+              "errors": {
+                "example": [
+                  {
+                    "code": "INVALID_REQUEST",
+                    "details": "Invalid JSON"
+                  },
+                  {
+                    "field": "username",
+                    "code": "INVALID_USERNAME_LENGTH",
+                    "details": "Username length must be between 4 and 50 characters."
+                  },
+                  {
+                    "field": "username",
+                    "code": "INVALID_USERNAME_CHARS",
+                    "details": "Username must start with a letter and contain only letters, numbers, dots (.), underscores (_), dashes (-), or @"
+                  },
+                  {
+                    "field": "username",
+                    "code": "ALREADY_EXISTS_USERNAME",
+                    "details": "Username already exists."
+                  },
+                  {
+                    "field": "password",
+                    "code": "INVALID_PASSWORD_LENGTH",
+                    "details": "Password must be at least 8 characters."
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "SuccessAPIResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ErrorAPIResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIError"
+            }
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "APIError": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "AuthSuccessResponse": {
+        "description": "Successful auth (login/register)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/SuccessAPIResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/UserToken" },
+                    "message": {
+                      "type": "string",
+                      "message": { "example": "user_found" }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "UnauthorizedResponse": {
+        "description": "Unauthorized Response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ErrorAPIResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "message": { "example": "requires_token" },
+                    "errors": {
+                      "example": [
+                        {
+                          "code": "REQUIRED_TOKEN",
+                          "details": "A Token is required."
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
